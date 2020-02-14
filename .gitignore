@@ -1,0 +1,14 @@
+*.pyc
+simulator/Library
+simulator/log*/*
+simulator/obj
+simulator/*.sln
+simulator/*.userprefs
+simulator/Temp
+simulator/Build
+simulator/Packages
+simulator/Logs
+simulator/.vs
+*.csproj
+env
+Game/**
