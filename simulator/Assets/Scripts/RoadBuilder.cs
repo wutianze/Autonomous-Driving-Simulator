@@ -33,7 +33,7 @@ public class RoadBuilder : MonoBehaviour {
 
 	void Start()
 	{
-		if(terToolkit != null && doErodeTerrain)
+		if (terToolkit != null && doErodeTerrain)
 		{
 			//terToolkit.FastThermalErosion(20, 0.0f, 0.0f); //creates pits
 			//terToolkit.FastHydraulicErosion(100, 1.0f, 0.0f); //creates washouts
@@ -46,7 +46,7 @@ public class RoadBuilder : MonoBehaviour {
 	{
 		GameObject[] prev = GameObject.FindGameObjectsWithTag("road_mesh");
 
-		foreach(GameObject g in prev)
+		foreach (GameObject g in prev)
 			Destroy(g);
 
 		//advance road index into texture list.
@@ -55,30 +55,30 @@ public class RoadBuilder : MonoBehaviour {
 
 	public void SetNewRoadVariation(int iVariation)
 	{
-		if(roadTextures.Length > 0)		
-			customRoadTexure = roadTextures[ iVariation % roadTextures.Length ];
+		if (roadTextures.Length > 0)
+			customRoadTexure = roadTextures[iVariation % roadTextures.Length];
 
-		if(roadOffsets.Length > 0)
-			roadOffsetW = roadOffsets[ iVariation % roadOffsets.Length ];
+		if (roadOffsets.Length > 0)
+			roadOffsetW = roadOffsets[iVariation % roadOffsets.Length];
 
-		if(roadWidths.Length > 0)
-			roadWidth = roadWidths[ iVariation % roadWidths.Length ];
-		
+		if (roadWidths.Length > 0)
+			roadWidth = roadWidths[iVariation % roadWidths.Length];
+
 	}
 
 	public void NegateYTiling()
 	{
 		//todo
-		if(createdRoad == null)
+		if (createdRoad == null)
 			return;
-		
+
 		MeshRenderer mr = createdRoad.GetComponent<MeshRenderer>();
 		Vector2 ms = mr.material.mainTextureScale;
 		ms.y *= -1.0f;
 		mr.material.mainTextureScale = ms;
 	}
 
-	public void InitRoad(CarPath path)
+	/*public void InitRoad(CarPath path)
 	{
 		if(terToolkit != null && doFlattenAtStart)
 		{
@@ -252,5 +252,59 @@ public class RoadBuilder : MonoBehaviour {
 
 			//terToolkit.TextureTerrain(slopeStops, heightStops, textures);
 		}
+	}*/
+	public void InitRoad(CarPath path)
+	{
+		GameObject go = GameObject.Instantiate(roadPrefabMesh);
+		MeshRenderer mr = go.GetComponent<MeshRenderer>();
+		MeshFilter mf = go.GetComponent<MeshFilter>();
+		Mesh mesh = new Mesh();
+		mf.mesh = mesh;
+		createdRoad = go;
+
+		if (customRoadTexure != null)
+		{
+			mr.material.mainTexture = customRoadTexure;
+		}
+		else if (roadTextures != null && iRoadTexture < roadTextures.Length)
+		{
+			Texture2D t = roadTextures[iRoadTexture];
+
+			if (mr != null && t != null)
+			{
+				mr.material.mainTexture = t;
+			}
+		}
+		if (path.things != null)
+		{
+			for (int i = 0; i < path.things.Length; i++)
+			{
+				if (path.things[i].thing == "BLOCK")
+				{
+					Debug.Log(string.Format("BLOCK here"));
+					GameObject blockO = Instantiate(block, path.things[i].pos, path.things[i].thing_rot) as GameObject;
+					blockO.AddComponent<Rigidbody>();
+					blockO.AddComponent<BoxCollider>();
+					blockO.tag = "pathNode";
+				}
+				else if (path.things[i].thing == "CONE")
+				{
+					GameObject coneO = Instantiate(cone, path.things[i].pos, path.things[i].thing_rot) as GameObject;
+					coneO.AddComponent<Rigidbody>();
+					coneO.AddComponent<BoxCollider>();
+					coneO.tag = "pathNode";
+				}
+			}
+		}
+
+
+		go.tag = "road_mesh";
+		mesh.vertices = path.vertices;//记录顶点
+		mesh.triangles = path.tri;//3的倍数，记录顶点连接顺序
+		mesh.normals = path.normals;//法线坐标
+		mesh.uv = path.uv;//贴图坐标
+
+		mesh.RecalculateBounds();
+
 	}
 }

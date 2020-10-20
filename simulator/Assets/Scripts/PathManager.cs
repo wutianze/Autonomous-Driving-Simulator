@@ -1,5 +1,9 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Text;
+using System.IO;
 
 public class PathManager : MonoBehaviour {
 
@@ -12,6 +16,8 @@ public class PathManager : MonoBehaviour {
 	Vector3 span = Vector3.zero;
 
 	public float spanDist = 5f;// length of one part 
+
+	public float roadWidth = 5f;
 
 	public int numSpans = 100;
 
@@ -53,10 +59,11 @@ public class PathManager : MonoBehaviour {
 	// method 0: randomPath, method 1: script road
 	public void InitNewRoad(int method)
 	{
-		switch(method){
+		Debug.Log(string.Format("Test Debug"));
+		switch (method){
 			case 0: MakeRandomPath();
 			break;
-			case 1: MakeScriptedPath();
+			case 1: MakePointPath();//MakeScriptedPath();
 			break;
 			default:MakeRandomPath();
 			break;
@@ -120,12 +127,13 @@ public class PathManager : MonoBehaviour {
 
     public Vector3 GetPathEnd()
     {
-        int iN = path.nodes.Count - 1;
+		/*int iN = path.nodes.Count - 1;
 
         if(iN < 0)
             return GetPathStart();
 
-        return path.nodes[iN].pos;
+        return path.nodes[iN].pos;*/
+		return path.vertices[path.vertices.Length - 1];
     }
 
 	void SmoothPath()
@@ -140,7 +148,7 @@ public class PathManager : MonoBehaviour {
 	/*
 	void MakePointPath()
 	{
-		string filename = "thunder_path";
+		string filename = GlobalState.script_path;
 
 		TextAsset bindata = Resources.Load(filename) as TextAsset;
 
@@ -159,21 +167,89 @@ public class PathManager : MonoBehaviour {
 
 		foreach(string line in lines)
 		{
-			string[] tokens = line.Split(',');
+			string[] tokens = line.Split(' ');
 
-			if (tokens.Length != 3)
+			if (tokens.Length <= 5)
 				continue;
-			np.x = float.Parse(tokens[0]);
-			np.y = float.Parse(tokens[1]) + offsetY;
-			np.z = float.Parse(tokens[2]);
+			int index = int.Parse(tokens[0]);
+			np.x = float.Parse(tokens[1]);
+			np.y = float.Parse(tokens[2]) + offsetY;
+			np.z = float.Parse(tokens[3]);
+			for (int i = 4;i < tokens.Length;i++) {
+				LineToDraw tmpltd = new LineToDraw();
+				tmpltd.start = index;
+				tmpltd.end = int.Parse(tokens[i]);
+				path.lines.Add(tmpltd);
+			}
 			PathNode p = new PathNode();
 			p.pos = np;
 			path.nodes.Add(p);
 		}
 			
-	}
-	*/
+	}*/
+	void MakePointPath()
+	{
+		string filename = GlobalState.script_path;
 
+		string[] lines = File.ReadAllLines(filename);
+
+		Debug.Log(string.Format("found {0} path points. to load", lines.Length));
+
+		path = new CarPath();
+		Vector3 s = startPos.position;
+		s.x = s.x - 2.5f;
+		float offsetY = 0.1f;
+
+		string[] pathSetting = lines[0].Split(' ');
+		int numVerts = int.Parse(pathSetting[0]);
+		int numTriIndecies = (numVerts - int.Parse(pathSetting[1])*2)*3;
+		int numThings = int.Parse(pathSetting[2]);
+		Debug.Log(string.Format("numVerts: {0}, numTriIndecies: {1}, numThings: {2}", numVerts, numTriIndecies, numThings));
+		path.initScriptsCarPath(numVerts, numTriIndecies, numThings);
+		
+		string[] points = lines[1].Split(',');
+		for(int i = 0; i < points.Length; i++)
+        {
+			string[] onePoint = points[i].Split(' ');
+			Debug.Log(string.Format("read line: {0},{1},{2},{3}",int.Parse(onePoint[0]),float.Parse(onePoint[1]), float.Parse(onePoint[2]), float.Parse(onePoint[3])));
+			path.vertices[int.Parse(onePoint[0])] = new Vector3(float.Parse(onePoint[1]), float.Parse(onePoint[2]) + offsetY, float.Parse(onePoint[3])) + s;
+        }
+
+		string[] putThings = lines[2].Split(',');
+		for (int i = 0; i < numThings; i++) {
+			string[] oneThing = putThings[i].Split(' ');
+			Debug.Log(string.Format("read thing: {0},{1},{2},{3}", float.Parse(oneThing[1]), float.Parse(oneThing[2]), float.Parse(oneThing[3]), float.Parse(oneThing[4])));
+			ThingObject thingTmp = new ThingObject();
+			thingTmp.thing = oneThing[0];
+			thingTmp.pos = new Vector3(float.Parse(oneThing[1]), float.Parse(oneThing[2]) + offsetY, float.Parse(oneThing[3])) + s;
+			thingTmp.thing_rot = Quaternion.Euler(0.0f, float.Parse(oneThing[4]), 0f);
+			path.things[i] = thingTmp;
+		}
+
+		int triIndex = 0;
+		int uvIndex = 0;
+		int pointIndex = 0;
+		for (int i = 3; i < lines.Length; i++) {
+			string[] pointTmp = lines[i].Split(' ');
+			for (int j = 0; j < pointTmp.Length; j = j + 2) {
+				path.uv[int.Parse(pointTmp[j])] = new Vector2(0.2f * uvIndex, 0.0f);//设置贴图坐标
+				path.uv[int.Parse(pointTmp[j+1])] = new Vector2(0.2f * uvIndex, 1.0f);
+				path.normals[int.Parse(pointTmp[j])] = Vector3.up;
+				path.normals[int.Parse(pointTmp[j+1])] = Vector3.up;
+				uvIndex = uvIndex + 1;
+				if (j + 3 >= pointTmp.Length) { break; }
+				path.tri[triIndex] = int.Parse(pointTmp[j]);
+				path.tri[triIndex+1] = int.Parse(pointTmp[j+2]);
+				path.tri[triIndex+2] = int.Parse(pointTmp[j+1]);
+				path.tri[triIndex+3] = int.Parse(pointTmp[j+2]);
+				path.tri[triIndex+4] = int.Parse(pointTmp[j+3]);
+				path.tri[triIndex+5] = int.Parse(pointTmp[j+1]);
+				triIndex = triIndex + 6;
+			}
+		}
+	}
+
+	/*
 	void MakeScriptedPath()
 	{
 		TrackScript script = new TrackScript();
@@ -216,24 +292,12 @@ public class PathManager : MonoBehaviour {
 					thing = "cone";
 					thing_offset = se.value;
 					thing_rot = se.value2;
-					/*
-					GameObject coneO=Instantiate(cone, s, Quaternion.identity) as GameObject;
-					coneO.AddComponent<Rigidbody>();
-					coneO.AddComponent<BoxCollider>();
-					coneO.tag = "pathNode";
-					*/
 				}
 				else if(se.state == TrackParams.State.BLOCK)
 				{
 					thing = "block";
 					thing_offset = se.value;
 					thing_rot = se.value2;
-					/*
-					GameObject blockO=Instantiate(block, s, Quaternion.identity) as GameObject;
-					blockO.AddComponent<Rigidbody>();
-					blockO.AddComponent<BoxCollider>();
-					blockO.tag = "pathNode";
-					*/
 				}
 				else
 				{
@@ -263,7 +327,7 @@ public class PathManager : MonoBehaviour {
 					
 			}
 		}
-	}
+	}*/
 
 	void MakeRandomPath()
 	{
@@ -276,13 +340,12 @@ public class PathManager : MonoBehaviour {
 		span.x = 0f;
 		span.y = 0f;
 		span.z = spanDist;
-
 		for(int iS = 0; iS < numSpans; iS++)
 		{
 			Vector3 np = s;
 			PathNode p = new PathNode();
 			p.pos = np;
-			path.nodes.Add(p);
+			path.nodes.Add(iS,p);
 
 			float t = Random.Range(-1.0f * turnInc, turnInc);
 
@@ -307,9 +370,9 @@ public class PathManager : MonoBehaviour {
 
 	public bool SegmentCrossesPath(Vector3 posA, float rad)
 	{
-		foreach(PathNode pn in path.nodes)
+		foreach(KeyValuePair<int, PathNode> pn in path.nodes)
 		{
-			float d = (posA - pn.pos).magnitude;
+			float d = (posA - pn.Value.pos).magnitude;
 
 			if(d < rad)
 				return true;
@@ -328,9 +391,9 @@ public class PathManager : MonoBehaviour {
 
 		DestroyRoad();
 
-		foreach(PathNode pn in path.nodes)
+		foreach(KeyValuePair<int,PathNode> pn in path.nodes)
 		{
-			GameObject go = Instantiate(prefab, pn.pos, Quaternion.identity) as GameObject;
+			GameObject go = Instantiate(prefab, pn.Value.pos, Quaternion.identity) as GameObject;
 			go.tag = "pathNode";
 		}
 	}

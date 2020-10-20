@@ -201,7 +201,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='prediction server')
     parser.add_argument('--model', type=str, help='model filename')
     parser.add_argument('--host', type=str, default='0.0.0.0', help='bind to ip')
-    parser.add_argument('--port', type=int, default=9090, help='bind to port')
+    parser.add_argument('--port', type=int, default=9000, help='bind to port')
     #parser.add_argument('--constant_throttle', type=float, default=0.0, help='apply constant throttle')
     parser.add_argument('--control_method', type=int, default=1, help='0 for command, 1 for steer')
     args = parser.parse_args()

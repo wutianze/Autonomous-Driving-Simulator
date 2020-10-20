@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System;
 using tk;
+using System.Diagnostics;
 
 namespace tk
 {
@@ -30,7 +31,7 @@ namespace tk
     public class JsonTcpClient : MonoBehaviour {
 
         public string nnIPAddress = "127.0.0.1";
-        public int nnPort = 9090;
+        public int nnPort = 9000;
         private tk.TcpClient client;
 
         public tk.Dispatcher dispatcher;
@@ -58,10 +59,12 @@ namespace tk
 
         public bool SetIp(string ip){
             nnIPAddress = ip;
+nnPort = 9000;
             return true;
         }
         public bool Connect()
         {
+UnityEngine.Debug.Log(nnPort);
             return client.Connect(nnIPAddress, nnPort);
         }
 
@@ -88,8 +91,9 @@ namespace tk
         void OnDataRecv(byte[] bytes)
         {
             string str = System.Text.Encoding.UTF8.GetString(bytes);
-            
-            lock(_locker)
+            UnityEngine.Debug.Log("receive:");
+            UnityEngine.Debug.Log(str);
+            lock (_locker)
             {
                 recv_packets.Add(str);
             }
@@ -117,7 +121,7 @@ namespace tk
                     }
                     catch(Exception e)
                     {
-                        Debug.Log(e.ToString());
+                        UnityEngine.Debug.Log(e.ToString());
                     }
                 }
 

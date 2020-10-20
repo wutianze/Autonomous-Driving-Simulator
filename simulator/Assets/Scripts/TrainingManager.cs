@@ -84,11 +84,11 @@ public class TrainingManager : MonoBehaviour {
         if(overheadCamera == null)
             return;
 
-        Vector3 pathStart = pathManager.GetPathStart();
+        /*Vector3 pathStart = pathManager.GetPathStart();
         Vector3 pathEnd = pathManager.GetPathEnd();
         Vector3 avg = (pathStart + pathEnd) / 2.0f;
         avg.y = overheadCamera.transform.position.y;
-        overheadCamera.transform.position = avg;
+        overheadCamera.transform.position = avg;*/
     }
 
 

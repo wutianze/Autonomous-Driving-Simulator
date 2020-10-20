@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Collections.Specialized;
 
 public class PathNode
 {
@@ -8,22 +10,46 @@ public class PathNode
 	public CarModel cm;
 
 	public string activity;
-	public string thing;
+	/*public string thing;
 	public float thing_offset;
+	public Quaternion thing_rot;*/
+}
+
+public class ThingObject
+{
+	public Vector3 pos;
+	public string thing;
 	public Quaternion thing_rot;
 }
 
 public class CarPath 
 {
-	public List<PathNode> nodes;
+	public Vector3[] vertices;
+	public int[] tri;
+	public Vector3[] normals;
+	public Vector2[] uv;
+	public ThingObject[] things;
+
+	public Dictionary<int,PathNode> nodes;
+
 	public int iActiveSpan = 0;
 
 
 	public CarPath()
 	{
-		nodes = new List<PathNode>();
+		nodes = new Dictionary<int,PathNode>();
+
 
 		ResetActiveSpan();
+	}
+
+	public void initScriptsCarPath(int numVerts, int numTriIndecies, int numThings)
+	{
+		vertices = new Vector3[numVerts];
+		tri = new int[numTriIndecies];
+		normals = new Vector3[numVerts];
+		uv = new Vector2[numVerts];
+		things = new ThingObject[numThings];
 	}
 
 	public void ResetActiveSpan()
